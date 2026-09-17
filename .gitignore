@@ -1,2 +1,5 @@
 videos_baixados/
 .venv/
+build/
+dist/
+*.spec
