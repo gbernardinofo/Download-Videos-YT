@@ -3,11 +3,14 @@ import yt_dlp
 import threading
 import queue
 from tkinter import filedialog
+import os
+import sys
 
 customtkinter.set_appearance_mode("dark")
-pasta_destino = "./videos_baixados"
 
-# Inicializa a estrutura da fila e o controle de atividade
+# 1. Iniciamos a variável vazia em vez de um caminho padrão
+pasta_destino = ""
+
 fila_downloads = queue.Queue()
 download_ativo = False
 
@@ -87,37 +90,33 @@ def worker_fila():
     global download_ativo
     download_ativo = True
     
-    # O loop continua enquanto houver itens na fila
     while not fila_downloads.empty():
         tarefa = fila_downloads.get()
         url, formato, qualidade, quer_playlist = tarefa
         
-        # Atualiza o contador na tela
         label_fila.configure(text=f"Vídeos aguardando na fila: {fila_downloads.qsize()}")
-        
-        # Executa o download da vez
         baixar_video_youtube(url, formato, qualidade, quer_playlist)
         
-    # Quando a fila acaba, o worker encerra
     download_ativo = False
     label_status.configure(text="Todos os downloads da fila foram concluídos!", text_color="green")
     label_fila.configure(text="Vídeos aguardando na fila: 0")
 
 def adicionar_a_fila():
+    # 2. Trava de segurança: Verifica se a pasta foi escolhida antes de fazer qualquer coisa
+    if pasta_destino == "":
+        label_status.configure(text="Atenção: Escolha uma pasta de destino primeiro.", text_color="red")
+        return # Interrompe a função aqui e não adiciona à fila
+
     url = entrada_url.get()
     formato = menu_formato.get() 
     qualidade = menu_qualidade.get()
     quer_playlist = checkbox_playlist.get() == 1 
     
     if url:
-        # Adiciona a tarefa completa à fila
         fila_downloads.put((url, formato, qualidade, quer_playlist))
-        
-        # Limpa o campo para colar mais facilmente
         entrada_url.delete(0, 'end')
         label_fila.configure(text=f"Vídeos aguardando na fila: {fila_downloads.qsize()}")
         
-        # Se a thread de download não estiver rodando, ela é iniciada
         global download_ativo
         if not download_ativo:
             thread = threading.Thread(target=worker_fila, daemon=True)
@@ -127,7 +126,10 @@ def adicionar_a_fila():
 
 app = customtkinter.CTk()
 app.geometry("500x650")
-app.title("Baixador de Vídeos")
+app.title("Baixador de Vídeos e Áudios do YouTube")
+
+if sys.platform == "win32" and os.path.exists("icone.ico"):
+    app.iconbitmap("icone.ico")
 
 label_titulo = customtkinter.CTkLabel(app, text="Cole a URL do vídeo do YouTube aqui:")
 label_titulo.pack(pady=(20, 5))
@@ -154,14 +156,13 @@ menu_qualidade.grid(row=1, column=1, padx=10)
 botao_pasta = customtkinter.CTkButton(app, text="Escolher Pasta de Destino", command=selecionar_pasta, fg_color="gray")
 botao_pasta.pack(pady=20)
 
-label_pasta = customtkinter.CTkLabel(app, text=f"Destino: {pasta_destino}", font=("Arial", 11))
+# 3. Atualizamos o texto inicial para refletir que não há pasta escolhida
+label_pasta = customtkinter.CTkLabel(app, text="Destino: Nenhuma pasta selecionada", font=("Arial", 11))
 label_pasta.pack(pady=(0, 10))
 
-# O botão agora adiciona à fila em vez de congelar a interface ou iniciar sozinho
 botao_baixar = customtkinter.CTkButton(app, text="Adicionar à Fila", command=adicionar_a_fila)
 botao_baixar.pack(pady=10)
 
-# Novo label para mostrar o tamanho da fila
 label_fila = customtkinter.CTkLabel(app, text="Vídeos aguardando na fila: 0", font=("Arial", 11))
 label_fila.pack(pady=5)
 

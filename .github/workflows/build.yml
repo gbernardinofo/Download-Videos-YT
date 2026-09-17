@@ -1,4 +1,4 @@
-name: Compilar Baixador de Vídeos
+name: Compilar Baixador de Vídeos e Áudios
 
 on:
   push:
@@ -31,7 +31,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Gerar Executável
-      run: pyinstaller --onefile --windowed app.py
+      run: pyinstaller --name "BaixadorDeVideosEÁudios" --icon=icone.ico --onefile --windowed app.py
 
     - name: Fazer Upload do Artefato
       uses: actions/upload-artifact@v4
