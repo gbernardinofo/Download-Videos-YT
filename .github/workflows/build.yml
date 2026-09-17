@@ -1,0 +1,43 @@
+name: Compilar Baixador de Vídeos
+
+# Define que o robô vai rodar toda vez que você fizer um "push" (enviar código) na branch principal
+on:
+  push:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    name: Compilar para ${{ matrix.os }}
+    # Aqui criamos a "matrix", pedindo um PC com Windows e outro com Ubuntu (Linux)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    steps:
+    # Passo 1: Pega o seu código do repositório
+    - name: Baixar o código
+      uses: actions/checkout@v3
+
+    # Passo 2: Instala o Python no PC da nuvem
+    - name: Configurar Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    # Passo 3: Instala as bibliotecas do requirements.txt
+    - name: Instalar Dependências
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    # Passo 4: Roda o PyInstaller
+    - name: Gerar Executável
+      run: pyinstaller --onefile --windowed app.py
+
+    # Passo 5: Salva o arquivo final gerado para você poder baixar depois
+    - name: Fazer Upload do Artefato
+      uses: actions/upload-artifact@v3
+      with:
+        name: executavel-${{ matrix.os }}
+        path: dist/*
